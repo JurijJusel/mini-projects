@@ -1,7 +1,7 @@
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.core.window import Window
-
+import re
 
 Window.size = (400, 600)
 Window.clearcolor = (0.2, 0.3, 0.4, 1)  # RGBA background color
@@ -25,17 +25,31 @@ class CalculatorLayout(BoxLayout):
         self.update_display()
 
     def calculate_result(self):
+        expr = self.current_expression.strip()
+
+        # Basic validation — expression must not be empty and must end with a number
+        if not expr or not expr[-1].isdigit():
+            return
+
+        # Prevent double operators like ++, --, +*, etc.
+        if re.search(r'[\+\-\*/]{2,}', expr):
+            return
+
         try:
-            result = str(eval(self.current_expression))
-            # Append expression + result to history
-            self.history_text += f"{self.current_expression} = {result}\n"
-            # Reset current expression
-            self.current_expression = ""
-            self.update_display()
+            # Safe evaluation — only numbers and operators allowed
+            if re.match(r'^[\d\+\-\*/\. ]+$', expr):
+                result = str(eval(expr))
+                self.history_text += f"{expr} = {result}\n"
+            else:
+                return
+
         except Exception:
-            self.history_text += f"{self.current_expression} = Error\n"
-            self.current_expression = ""
-            self.update_display()
+            # Any runtime error (e.g., division by zero)
+            return
+
+        # Clear expression and update display
+        self.current_expression = ""
+        self.update_display()
 
     def update_display(self):
         # Show history + current input

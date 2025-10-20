@@ -1,4 +1,4 @@
-# Kivy Calculator Project
+# Kivy Calculator mini Project
 
 ## Overview----
 This is a simple calculator application built using [Kivy](https://kivy.org/),
@@ -22,4 +22,4 @@ to learn Kivy, developed using Visual Studio Code (VSCode) and Python 3.12.5.
 To run this project, you need the following installed:
 - Python 3.12.5
 - Kivy (version 2.3.1, compatible with Python 3.12.5)
-- Visual Studio Code
+- Visual Studio Code.

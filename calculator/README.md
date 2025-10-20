@@ -1,4 +1,4 @@
-# Kivy Calculator Project
+# Kivy Calculator mini Project
 
 ## Overview
 This is a simple calculator application built using [Kivy](https://kivy.org/),

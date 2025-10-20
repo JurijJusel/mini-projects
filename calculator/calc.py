@@ -51,6 +51,52 @@ class CalculatorLayout(BoxLayout):
         self.current_expression = ""
         self.update_display()
 
+    def round_number(self):
+        """Round the last number or result"""
+        text = self.current_expression.strip()
+        if not text:
+            # Try to round the last result from history
+            if self.history_text.strip():
+                last_line = self.history_text.strip().split("\n")[-1]
+                if "=" in last_line:
+                    try:
+                        result = float(last_line.split("=")[-1].strip())
+                        rounded = round(result)
+                        self.history_text += f"Round: {rounded}\n"
+                        self.update_display()
+                        return
+                    except:
+                        return
+            return
+
+        # Round the current number being entered
+        try:
+            value = float(text)
+            rounded = round(value)
+            self.current_expression = str(rounded)
+            self.update_display()
+        except ValueError:
+            return
+
+    def area(self):
+        """Calculate area from two numbers (like width*height)"""
+        text = self.current_expression.strip()
+
+        # Extract numbers from the current expression
+        numbers = re.findall(r"[-+]?\d*\.?\d+", text)
+
+        if len(numbers) == 2:
+            a = float(numbers[0])
+            b = float(numbers[1])
+            area = a * b
+            self.history_text += f"Area ({a} x {b}) = {area}\n"
+            self.current_expression = ""
+            self.update_display()
+        else:
+            # Not enough numbers entered — show quick help
+            self.history_text += "Enter 2 numbers (e.g. 5&10) then press 'area' button\n"
+            self.update_display()
+
     def update_display(self):
         # Show history + current input
         self.ids.display.text = self.history_text + self.current_expression

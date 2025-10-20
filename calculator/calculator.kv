@@ -52,6 +52,14 @@
             on_press: root.button_pressed(self)
 
         Button:
+            text: "area"
+            font_size: 26
+            color: 1, 0, 0, 1
+            background_color: (1.0, 0.0, 0.0, 1.0)
+            on_press: root.area()
+
+
+        Button:
             text: "1"
             font_size: 20
             # background_color: " "
@@ -102,6 +110,17 @@
             font_size: 20
             on_press: root.button_pressed(self)
 
+        Button:
+            text: "&"
+            font_size: 20
+            on_press: root.button_pressed(self)
+
+        Button:
+            text: "."
+            font_size: 32
+            color: 1, 0, 0, 1
+            background_color: (0, 0.6, 0, 1)
+            on_press: root.button_pressed(self)
 
         Button:
             text: "C"
@@ -109,6 +128,13 @@
             color: 1, 0, 0, 1
             background_color: (1.0, 0.0, 0.0, 1.0)
             on_press: root.clear_display()
+
+        Button:
+            text: "=R"
+            font_size: 32
+            color: 1, 0, 0, 1
+            background_color: (1.0, 0.0, 0.0, 1.0)
+            on_press: root.round_number()
 
         Button:
             text: "="

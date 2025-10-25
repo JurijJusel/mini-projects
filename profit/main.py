@@ -77,21 +77,71 @@ def calculate_profit(data: dict) -> None:
     print(f"Price now: {price_now:.3f} USD")
     print(f"Profit per year: {profit:.3f} USD")
     print(f"Percent change per year: {percent_change:.2f} %")
+    return percent_change
+
+
+def calculate_preliminary_invest_profit(investment_amount: int,
+                                        percent_per_year_profit: float) -> None:
+    """
+    Calculate and print the estimated profit for a fixed investment over one year.
+
+    This function uses the provided annual profit percentage to calculate
+    how much profit would have been earned on a given investment amount.
+
+    Args:
+        investment_amount (int): The amount of money that was hypothetically invested one year ago (in USD).
+        percent_per_year_profit (float): The percentage gain or loss over one year (e.g., 25.0 for +25%).
+
+    Notes:
+        - This is a simplified calculation.
+        - It does **not include**:
+            * Transaction fees (buy/sell)
+            * Exchange withdrawal or deposit fees
+            * Network or gas fees
+            * Tax implications
+            * Compounding or reinvestment effects
+    """
+    profit = round((percent_per_year_profit / 100) * investment_amount, 2)
+    print(f"Preliminary yearly profit on an investment of {investment_amount} USD: {profit} USD")
+
+
+def parse_arguments() -> tuple[str, float | None]:
+    """
+    Parse CLI arguments like:
+        python3 main.py --btc --10
+        python3 main.py --10 --xrp
+
+    Returns:
+        tuple[str, float | None]: (coin_arg, investment_amount)
+    """
+    coin_arg = "btc"
+    investment_amount = 0
+
+    args = sys.argv[1:]
+    for arg in args:
+        if arg.startswith("--"):
+            value = arg[2:]
+
+            try:
+                investment_amount = float(value)
+            except ValueError:
+                if value.isalpha():
+                    coin_arg = value.lower()
+
+    return coin_arg, investment_amount
 
 
 def main():
-    coin_arg = 'btc'
-    args = sys.argv[1:]
-    for arg in args:
-        if arg.startswith('--'):
-            coin_arg = arg[2:]  # remove '--'
-            break
+    coin_arg, investment_amount = parse_arguments()
 
     coin_id = get_coin_id(coin_arg)
     print(f"Using coin api_id: {coin_id}")
 
     data = get_prices_at_timestamp(coin_id)
-    calculate_profit(data)
+    percent_change = calculate_profit(data)
+
+    if investment_amount > 0:
+        calculate_preliminary_invest_profit(investment_amount, percent_change)
 
 
 if __name__ == "__main__":

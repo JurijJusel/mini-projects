@@ -1,0 +1,4 @@
+BYTES_IN_MB = 1024 * 1024
+
+
+IMAGES_FOLDER = "images"

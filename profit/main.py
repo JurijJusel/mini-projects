@@ -105,7 +105,7 @@ def calculate_preliminary_invest_profit(investment_amount: int,
     print(f"Preliminary yearly profit on an investment of {investment_amount} USD: {profit} USD")
 
 
-def parse_arguments():
+def parse_arguments() -> tuple[str, float | None]:
     """
     Parse CLI arguments like:
         python3 main.py --btc --10
@@ -120,7 +120,7 @@ def parse_arguments():
     args = sys.argv[1:]
     for arg in args:
         if arg.startswith("--"):
-            value = arg[2:]  # remove leading "--"
+            value = arg[2:]
 
             try:
                 investment_amount = float(value)

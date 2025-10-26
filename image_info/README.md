@@ -10,7 +10,8 @@ and `rich` for pretty printing.
 ## 🛠️ Features
 
 - Extracts image resolution (WIDTHxHEIGHT)
-- Extracts image file size in megabytes
+- Extracts image file size in megabytes\
+- Evaluates pixel color distribution (Red, Green, Blue) and percentage area
 - Outputs structured results as dictionaries
 - Pretty-prints results using Rich
 
@@ -42,8 +43,16 @@ python3 main.py
 ```
 
 ## Example Output
-
-{'image_name': 'Screenshot 2024-07-22 at 00.08.49.png', 'resolution_size': '1393x757', 'size_mb': 0.289}
+{
+    'image_name': 'Screenshot 2025-02-11 at 18.39.59.png',
+    'resolution_size': '1427x722',
+    'rgb': {
+        'red': {'pixels': 28961, 'area_percent': 2.81},
+        'green': {'pixels': 60703, 'area_percent': 5.89},
+        'blue': {'pixels': 25812, 'area_percent': 2.51}
+    },
+    'size_mb': 0.199
+}
 
 ---
 

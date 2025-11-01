@@ -2,67 +2,14 @@ from datetime import datetime, timedelta
 import calendar
 from  rich import print
 import requests
-
-
-station = "vilniaus-ams"
-lat, lon = 54.6872, 25.2797
-
-
-###########
+from constants import STATION, LAT, LON, DAYS_COUNT, CSV_FILE_PATH
+from file import create_csv_file
 
 
 def get_previous_30_days():
     current_date = datetime.now().date()
-    all_dates = [(current_date - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(30)]
+    all_dates = [(current_date - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(DAYS_COUNT)]
     return all_dates
-
-#def get_meteo_data_for_date():
-#    results = []
-
-#    for date_str in get_previous_30_days():
-#        meteo_url = f"https://api.meteo.lt/v1/stations/{station}/observations/{date_str}"
-#        meteo_resp = requests.get(meteo_url)
-
-#        if meteo_resp.status_code == 200:
-#            data = meteo_resp.json()
-#            observations = data.get("observations", [])
-
-#            if observations:
-#                first_obs = observations[0] # get the first observation of the day
-#                result = {
-#                    "date": date_str,
-#                    "observationTimeUtc": first_obs["observationTimeUtc"],
-#                    "airTemperature": first_obs["airTemperature"],
-#                    "feelsLikeTemperature": first_obs["feelsLikeTemperature"],
-#                    "relativeHumidity": first_obs["relativeHumidity"]
-#                }
-
-#                # 2️⃣ Fetch sunrise and sunset times
-#                sun_url = f"https://api.sunrise-sunset.org/json?lat={lat}&lng={lon}&date={date_str}&formatted=1"
-#                sun_resp = requests.get(sun_url)
-#                if sun_resp.status_code == 200:
-#                    sun_data = sun_resp.json().get("results", {})
-#                    result["sunrise"] = sun_data.get("sunrise")
-#                    result["sunset"] = sun_data.get("sunset")
-#                else:
-#                    result["sunrise"] = None
-#                    result["sunset"] = None
-
-#                results.append(result)
-#        else:
-#            continue
-
-#    return results
-
-
-
-
-
-#if __name__ == "__main__":
-#    print(get_meteo_data_for_date())
-#    #print_current_month()
-#    #print(get_previous_30_days())
-
 
 
 def get_meteo_data(station, get_previous_30_days):
@@ -143,10 +90,16 @@ def merge_meteo_sun_data(meteo_data, sun_data):
     return merged
 
 
-if __name__ == "__main__":
-    meteo_data = get_meteo_data(station, get_previous_30_days)
-    sun_data = get_sun_data(lat, lon, get_previous_30_days)
-    final_data = merge_meteo_sun_data(meteo_data, sun_data)
+def write_data_to_csv(csv_file, data):
+    create_csv_file(csv_file, data)
+    print(f"Meteorological and sun data for {len(data)} days have been written to '{csv_file}'.")
 
-    for entry in final_data:
-        print(entry)
+
+if __name__ == "__main__":
+    meteo_data = get_meteo_data(STATION, get_previous_30_days)
+    sun_data = get_sun_data(LAT, LON, get_previous_30_days)
+    merget_data = merge_meteo_sun_data(meteo_data, sun_data)
+    print(merget_data)
+    #write_data_to_csv(CSV_FILE_PATH, merget_data)
+    #for entry in final_data:
+    #    print(entry)

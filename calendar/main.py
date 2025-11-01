@@ -94,25 +94,34 @@ def get_sun_data(base_url: str, previous_days: list[str]) -> Dict[str, Dict]:
         sunrise, sunset, day_length times as values
     outputs:
     {
-        '2025-11-01': {'sunrise': '5:20:11 AM', 'sunset': '2:44:43 PM', 'day_length': '09:24:32'},
-        '2025-10-31': {'sunrise': '5:18:11 AM', 'sunset': '2:46:47 PM', 'day_length': '09:28:36'},
-        '2025-10-30': {'sunrise': '5:16:11 AM', 'sunset': '2:48:52 PM', 'day_length': '09:32:41'},
-        ...
+        '2025-11-01': {
+            'sunrise': '2025-11-01T05:20:11+00:00',
+            'sunset': '2025-11-01T14:44:43+00:00',
+            'day_length': '9:24:32'
+        },
+        '2025-10-31': {
+            'sunrise': '2025-10-31T05:18:11+00:00',
+            'sunset': '2025-10-31T14:46:47+00:00',
+            'day_length': '9:28:36'
+        }
     }
     """
     sun_results = {}
     for date_str in previous_days:
-        url = f"{base_url}&date={date_str}&formatted=1"
+        url = f"{base_url}&date={date_str}&formatted=0"
         print(url)
         resp = requests.get(url)
         if resp.status_code != 200:
             continue
 
         data = resp.json().get("results", {})
+        if not data:
+            continue
+
         sun_results[date_str] = {
             "sunrise": data.get("sunrise"),
             "sunset": data.get("sunset"),
-            "day_length": data.get("day_length")
+            "day_length": str(timedelta(seconds=data.get("day_length", 0)))
         }
 
     return sun_results
@@ -128,25 +137,25 @@ def merge_meteo_sun(meteo_data: List[Dict], sun_data: Dict[str, Dict]) -> List[M
         List[MeteoData]: List of merged MeteoData objects
     outputs:
         [
-             MeteoData(
+            MeteoData(
+                date='2025-11-01',
+                observationTimeUtc=datetime.datetime(2025, 11, 1, 0, 0),
+                airTemperature=7.6,
+                feelsLikeTemperature=5.7,
+                relativeHumidity=97,
+                sunrise=datetime.datetime(2025, 11, 1, 5, 20, 11, tzinfo=TzInfo(0)),
+                sunset=datetime.datetime(2025, 11, 1, 14, 44, 43, tzinfo=TzInfo(0)),
+                day_length='9:24:32'
+            ),
+            MeteoData(
                 date='2025-10-31',
-                observationTimeUtc='2025-10-31 00:00:00',
+                observationTimeUtc=datetime.datetime(2025, 10, 31, 0, 0),
                 airTemperature=7.4,
                 feelsLikeTemperature=4.1,
                 relativeHumidity=97,
-                sunrise='5:18:11 AM',
-                sunset='2:46:47 PM',
-                day_length='09:28:36'
-            ),
-            MeteoData(
-                date='2025-10-30',
-                observationTimeUtc='2025-10-30 00:00:00',
-                airTemperature=5.0,
-                feelsLikeTemperature=2.9,
-                relativeHumidity=100,
-                sunrise='5:16:11 AM',
-                sunset='2:48:52 PM',
-                day_length='09:32:41'
+                sunrise=datetime.datetime(2025, 10, 31, 5, 18, 11, tzinfo=TzInfo(0)),
+                sunset=datetime.datetime(2025, 10, 31, 14, 46, 47, tzinfo=TzInfo(0)),
+                day_length='9:28:36'
             ),
             ...
         ]
@@ -169,29 +178,30 @@ def save_to_csv(data: List[MeteoData], csv_path: str):
     outputs data to csv file:
         [
             {
-            'date': '2025-10-30',
-            'observationTimeUtc': '2025-10-30 00:00:00',
-            'airTemperature': 5.0,
-            'feelsLikeTemperature': 2.9,
-            'relativeHumidity': 100,
-            'sunrise': '5:16:11 AM',
-            'sunset': '2:48:52 PM',
-            'day_length': '09:32:41'
-             },
-            {
             'date': '2025-10-29',
-            'observationTimeUtc': '2025-10-29 00:00:00',
+            'observationTimeUtc': datetime.datetime(2025, 10, 29, 0, 0),
             'airTemperature': 6.3,
             'feelsLikeTemperature': 4.3,
             'relativeHumidity': 97,
-            'sunrise': '5:14:11 AM',
-            'sunset': '2:50:58 PM',
-            'day_length': '09:36:47'
+            'sunrise': datetime.datetime(2025, 10, 29, 5, 14, 11, tzinfo=TzInfo(0)),
+            'sunset': datetime.datetime(2025, 10, 29, 14, 50, 58, tzinfo=TzInfo(0)),
+            'day_length': '9:36:47'
             },
-             ...
+            {
+            'date': '2025-10-28',
+            'observationTimeUtc': datetime.datetime(2025, 10, 28, 0, 0),
+            'airTemperature': 4.1,
+            'feelsLikeTemperature': 2.1,
+            'relativeHumidity': 95,
+            'sunrise': datetime.datetime(2025, 10, 28, 5, 12, 11, tzinfo=TzInfo(0)),
+            'sunset': datetime.datetime(2025, 10, 28, 14, 53, 6, tzinfo=TzInfo(0)),
+            'day_length': '9:40:55'
+            },
+            ...
         ]
     """
     data = [record.model_dump() for record in data]
+
     create_csv_file(csv_path, data)
     print(f"Meteorological and sun data for {len(data)} days have been written to '{csv_path}'.")
 

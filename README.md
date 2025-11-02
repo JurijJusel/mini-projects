@@ -19,3 +19,9 @@ A Python project to extract image information (filename, resolution, and file si
 from a folder of images.
 
 --- a/file:///Users/home/Github/mini-projects/image_info/README.md
+
+# Calendar script
+This project fetches meteorological data from api.meteo.lt and
+sunrise/sunset from api.sunrise-sunset.org
+
+--- a/file:///Users/home/Github/mini-projects/calendar/README.md

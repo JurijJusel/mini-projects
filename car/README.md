@@ -1,7 +1,8 @@
 # MKAuto Image Scraper
 
-This Python script scrapes all car listings and their images from [mkauto.lt](https://www.mkauto.lt),
-automatically saving all vehicle images to a local folder.
+This Python script scrapes all car listings and their images from [mkauto.lt]
+(https://www.mkauto.lt), automatically saving all vehicle images
+to a local folder.
 
 
 ## ⚙️ Features
@@ -32,6 +33,7 @@ pip install -r requirements.txt
 ```bash
 uv pip install -r pyproject.toml
 ```
+
 
 ## Run  the script:
 

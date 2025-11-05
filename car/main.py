@@ -107,7 +107,8 @@ def save_photos_from_urls(all_cars_urls, output_dir):
 
     for img_index, image_url in track(
         enumerate(all_cars_urls, start=1),
-        description="Downloading car images ..."):
+        description="Downloading car images ...",
+        total=len(all_cars_urls)):
 
         try:
             req = requests.get(image_url, timeout=1.5)
@@ -127,6 +128,8 @@ def main():
     all_links = get_all_pages_links()
     print("Fetching images urls links ...")
     all_images_url = images_urls_each_car_detail_page(all_links)
+    print(all_images_url)
+    print("Done get all images urls links!")
     save_photos_from_urls(all_images_url, OUTPUT_DIR)
     print("Done!")
 

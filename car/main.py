@@ -5,8 +5,9 @@ import time
 from rich import print
 from rich.progress import track
 from pathlib import Path
-from constants import BASE_URL, OUTPUT_DIR
+from constants import BASE_URL, OUTPUT_DIR, JSON_FILE_PATH
 import re
+from file import create_data_json_file, open_json_file
 
 
 def get_soup(page_url):
@@ -71,66 +72,100 @@ def get_all_pages_links():
     return all_links
 
 
-def images_urls_each_car_detail_page(all_links):
+def get_each_car_detail_page_data(all_links):
     """
-    Extracts all image URLs for each car detail page.
+    Extracts image URLs and basic metadata (car model, page URL)
+    for each car detail page.
     Args:
         all_links (list[str]): List of car detail page URLs.
     Returns:
-        list[str]: List of all image URLs found across all car pages.
+        list[dict]: A list of dictionaries with keys:
+                    - car_model
+                    - car_page_url
+                    - car_image_full_url
     """
-    images_urls = []
-    for link in all_links:
+    result = []
+    for index, link in track(
+        enumerate(all_links, start=1),
+        description="Scanning car detail pages...",
+        total=len(all_links)):
+
         soup = get_soup(link)
-        found = False
+        car_page_url = link
+        car_model = soup.title.text.strip() if soup.title else "Unknown"
+
         for a in soup.find_all("a", href=True, attrs={"data-lightbox": True}):
             car_image_full_url = urljoin(BASE_URL, a["href"])
-            images_urls.append(car_image_full_url)
-            found = True
-        if not found:
-            print("No matching <a> tag found.")
-    return images_urls
+
+            data = {
+                "car_model" : car_model,
+                "car_page_url" : car_page_url,
+                "car_image_full_url" : car_image_full_url
+            }
+            result.append(data)
+    return result
 
 
-def save_photos_from_urls(all_cars_urls, output_dir):
+def save_photos_from_urls(json_data: list[dict], output_dir: str):
     """
-    Downloads and saves images from a list of URLs.
+    Downloads car images from a list of dictionaries and saves them to a folder.
+    Each dictionary in `json_data` should contain:
+        - 'car_model': Name of the car (used in the filename)
+        - 'car_image_full_url': URL of the car image to download
+        - 'car_page_url' :  URL of the car page
+    The filename is created by joining the first two words of the car model
+    (lowercased) with an underscore, followed by an index number.
     Args:
-        all_cars_urls (list[str]): List of image URLs to download.
-        output_dir (str | Path): Directory path to save downloaded images.
+        json_data (list[dict]): List of dictionaries containing car info and image URLs.
+        output_dir (str): Path to the folder where images will be saved.
+    Returns:
+        None
     Notes:
-        Filenames are generated based on the image ID from the URL,
-        with an incremented index appended to avoid duplicates.
+        - The function automatically creates the output directory if it does not exist.
+        - Downloads are done sequentially; if a download fails, it prints an error and continues.
+        - Output File names: "toyota_avensis_1.jpg"
     """
-    base_path = Path(output_dir)
-    base_path.mkdir(parents=True, exist_ok=True)
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
 
-    for img_index, image_url in track(
-        enumerate(all_cars_urls, start=1),
+    for index, item in track(
+        enumerate(json_data, start=1),
         description="Downloading car images ...",
-        total=len(all_cars_urls)):
+        total=len(json_data)):
+
+
+        car_model = item.get("car_model", "unknown_model").lower().split()
+        model = "_".join(car_model[:2])
+        image_url = item.get("car_image_full_url")
+
+        filename = out_dir / f"{model}_{index}.jpg"
 
         try:
-            req = requests.get(image_url, timeout=1.5)
-            req.raise_for_status()
-            match = re.search(r'i\.(\d+)', image_url)
-            image_url_id = match.group(1)
-            filename = base_path / f"{image_url_id}_image_{img_index}.jpg"
+            resp = requests.get(image_url, timeout=5)
+            resp.raise_for_status()
 
-            with open(filename, "wb") as f:
-                f.write(req.content)
+            with open(filename, "wb") as f_out:
+                f_out.write(resp.content)
 
         except Exception as e:
-            print(f"Failed {image_url}: {e}")
+            print(f"Failed to download {image_url}: {e}")
+
 
 
 def main():
     all_links = get_all_pages_links()
-    print("Fetching images urls links ...")
-    all_images_url = images_urls_each_car_detail_page(all_links)
-    print(all_images_url)
-    print("Done get all images urls links!")
-    save_photos_from_urls(all_images_url, OUTPUT_DIR)
+    print("Fetching images urls links and data...")
+    all_images_url = get_each_car_detail_page_data(all_links)
+    print("Done get all images urls links and data!")
+
+    print("Write data to json file ...")
+    create_data_json_file(all_images_url, JSON_FILE_PATH)
+
+    print("Open json file load data ...")
+    open_json_data = open_json_file(JSON_FILE_PATH)
+
+    print("Save prhotos from links ...")
+    save_photos_from_urls(open_json_data, OUTPUT_DIR)
     print("Done!")
 
 

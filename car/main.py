@@ -1,12 +1,11 @@
+import time
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
-import time
 from rich import print
 from rich.progress import track
 from pathlib import Path
 from constants import BASE_URL, OUTPUT_DIR, JSON_FILE_PATH
-import re
 from file import create_data_json_file, open_json_file
 
 
@@ -85,7 +84,7 @@ def get_each_car_detail_page_data(all_links):
                     - car_image_full_url
     """
     result = []
-    for index, link in track(
+    for _ , link in track(
         enumerate(all_links, start=1),
         description="Scanning car detail pages...",
         total=len(all_links)):

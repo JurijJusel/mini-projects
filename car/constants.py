@@ -8,7 +8,7 @@ OUTPUT_DIR = "mkauto_images"
 JSON_FILE_PATH = "data/cars_data.json"
 
 
-IMAGES_FOLDER = "mkauto_images/test"
+IMAGES_FOLDER_FOR_PROCESSING = "mkauto_images/test"
 
 
 BYTES_IN_MB = 1024 * 1024  # 1 MB = 1,048,576 bytes
@@ -50,3 +50,4 @@ COLOR_FOLDERS = {
     "GREEN_PALETTE": "mkauto_images/green",
     "RED_PALETTE": "mkauto_images/red"
 }
+

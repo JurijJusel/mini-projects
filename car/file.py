@@ -2,6 +2,21 @@ from pathlib import Path
 import json
 
 
+def ensure_folder_exists(folder_path):
+    """
+    Ensure a folder exists. Create it if missing.
+    Args:
+        path (str or Path): Folder path.
+    Returns:
+        Path: The folder as a Path object.
+    """
+    folder = Path(folder_path)
+    if not folder.exists():
+        folder.mkdir(parents=True, exist_ok=True)
+        print(f"Folder created: '{folder}'")
+    return folder
+
+
 def create_data_json_file(data: list[dict], json_file_path: str):
     """
     Saves a list of dictionaries to a JSON file, overwriting any existing file.

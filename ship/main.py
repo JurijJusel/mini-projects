@@ -179,8 +179,7 @@ class Board:
         return True
 
     def place_ship_by_letter_number(
-        self, letter: str, number: int, length: int, orientation: str
-    ) -> Ship:
+        self, letter: str, number: int, length: int, orientation: str) -> Ship:
         """
         Prideda laivą į lentą naudojant raidės ir skaičiaus koordinates.
         letter = 'A'-'J',
@@ -189,34 +188,6 @@ class Board:
         x, y = convert_letter_number(letter, number)
         ship = Ship(x, y, length, orientation)
         return ship
-
-    # Šūvis su skaitinėmis koordinatėmis
-    def shoot(self, x: int, y: int) -> str:
-        letter = chr(x + ord("A"))
-        number = y + 1
-
-        if (x, y) in self.shots_taken:
-            return f"Already shot here ({letter},{number})"
-
-        self.shots_taken.add((x, y))
-
-        for ship in self.ships:
-            if ship.register_hit(x, y):
-                return (
-                    f"Sunk({letter},{number})"
-                    if ship.is_sunk()
-                    else f"Hit({letter},{number})"
-                )
-        return f"Miss({letter},{number})"
-
-    def shoot_by_letter_number(self, letter: str, number: int) -> str:
-        """
-        Shoot at the board using letter and number coordinates.
-        letter = 'A'-'J',
-        number = 1-10
-        """
-        x, y = convert_letter_number(letter, number)
-        return self.shoot(x, y)
 
     def all_ships_sunk(self) -> bool:
         """
@@ -236,10 +207,62 @@ class Board:
         return f"Board(size={self.size}, ships={self.ships})"
 
 
+class Shooter():
+    """
+    Klasė atsakinga už šaudymą į Board.
+    Attributes:
+        board (Board): lenta, kurioje saugomi laivai ir šūviai.
+    """
+    def __init__(self, board):
+        self.board = board
+
+    def shoot(self, x: int, y: int) -> str:
+        """
+        Atlieka šūvį į lentą naudodamas skaitines koordinatės (x, y).
+        Args:
+            x (int): eilutės indeksas (0-9)
+            y (int): stulpelio indeksas (0-9)
+        Returns:
+            str: rezultatas, vienas iš:
+                - "Already shot here (X,Y)"
+                - "Hit (X,Y)"
+                - "Sunk (X,Y)"
+                - "Miss (X,Y)"
+        """
+        letter = chr(x + ord("A"))
+        number = y + 1
+
+        if (x, y) in self.board.shots_taken:
+            return f"Already shot here ({letter},{number})"
+
+        self.board.shots_taken.add((x, y))
+
+        for ship in self.board.ships:
+            if ship.register_hit(x, y):
+                return (
+                    f"Sunk({letter},{number})"
+                    if ship.is_sunk()
+                    else f"Hit({letter},{number})"
+                )
+        return f"Miss({letter},{number})"
+
+    def shoot_by_letter_number(self, letter: str, number: int) -> str:
+        """
+        Atlieka šūvį naudodamas raidę ir skaičių (pvz., "A", 1).
+        Args:
+            letter (str): raidė A-J, žyminti eilutę
+            number (int): skaičius 1-10, žymintis stulpelį
+        Returns:
+            str: rezultatas, kaip shoot() metode.
+        """
+        x, y = convert_letter_number(letter, number)
+        return self.shoot(x, y)
+
+
 if __name__ == "__main__":
     board = Board()
 
-    ship1 = board.place_ship_by_letter_number("A", 1, 5, "H")
+    ship1 = board.place_ship_by_letter_number("A", 1, 3, "H")
     ship2 = board.place_ship_by_letter_number("c", 1, 2, "H")
 
     # Tikriname prieš pridėjimą
@@ -250,16 +273,17 @@ if __name__ == "__main__":
 
     print(board)
 
-    # Šauname
-    print(board.shoot_by_letter_number("A", 1))
-    print(board.shoot_by_letter_number("A", 1))
-    print(board.shoot_by_letter_number("a", 2))
-    print(board.shoot_by_letter_number("a", 3))
-    print(board.shoot_by_letter_number("a", 4))
-    print(board.shoot_by_letter_number("a", 6))
-    print(board.shoot_by_letter_number("A", 5))
+    shooter = Shooter(board)
 
-    print(board.shoot_by_letter_number("c", 1))
-    print(board.shoot_by_letter_number("c", 2))
+# Šaudymai
+    print(shooter.shoot_by_letter_number("A", 1))  # Hit
+    print(shooter.shoot_by_letter_number("A", 2))  # Hit
+    print(shooter.shoot_by_letter_number("A", 3))  # Hit
+    print(shooter.shoot_by_letter_number("A", 4))  # Miss
+
+    print(shooter.shoot_by_letter_number("c", 1))  # Miss
+    print(shooter.shoot_by_letter_number("c", 1))  # Miss
+    print(shooter.shoot_by_letter_number("c", 2))  # Miss
+
 
     print(board.all_ships_sunk())

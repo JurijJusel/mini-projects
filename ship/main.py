@@ -1,6 +1,7 @@
-from typing import List, Tuple, Set
-from rich import print
-from constants import MAX_SHIPS_BY_LENGTH
+from typing import Tuple, List, Set
+from constants import MAX_SHIPS_BY_LENGTH, JSON_FILE_PATH, ROUNDS_PER_GAME
+from statistic import print_statistics, calculate_statistics
+from file import append_to_json_list
 
 
 def convert_letter_number(letter: str, number: int) -> Tuple[int, int]:
@@ -16,21 +17,8 @@ def convert_letter_number(letter: str, number: int) -> Tuple[int, int]:
 
 class Ship:
     """
-    Klasė atstovauja vieną laivą „Laivų mūšio“ žaidime.
-    Vidinė koordinatė:
-        x = eilutė (raidė A–J → 0–9)
-        y = stulpelis (1–10 → 0–9)
-    Parametrai:
-        x (int): pradžios eilutė
-        y (int): pradžios stulpelis
-        length (int): laivo ilgis
-        orientation (str): 'H' (horizontal), 'V' (vertical)
-    Metodai:
-        - register_hit(x, y)
-        - is_sunk()
-        - coordinates: visų laivo langelių sąrašas
+    Klasė atstovauja vieną laivą „Laivų mūšio" žaidime.
     """
-
     def __init__(self, x: int, y: int, length: int, orientation: str):
         self.x = x
         self.y = y
@@ -49,7 +37,6 @@ class Ship:
     def _generate_coordinates(self) -> List[Tuple[int, int]]:
         """
         Generuoja laivo koordinatės sąrašą pagal pradžios tašką, ilgį ir orientaciją.
-        Grąžina sąrašą su (x, y) koordinatėmis.
         """
         if self.orientation == "H":  # horizontalus  einame į dešinę (keičiasi y)
             return [(self.x, self.y + i) for i in range(self.length)]
@@ -97,7 +84,6 @@ class Board:
         I | (8,0) (8,1) (8,2) (8,3) (8,4) (8,5) (8,6) (8,7) (8,8) (8,9)
         J | (9,0) (9,1) (9,2) (9,3) (9,4) (9,5) (9,6) (9,7) (9,8) (9,9)
     """
-
     def __init__(self, size: int = 10):
         self.size = size
         self.ships: List[Ship] = []
@@ -119,13 +105,9 @@ class Board:
 
     def add_all_ships_together(self, ships: List[Ship]) -> bool:
         """
-        ships: List[Ship] - nauji laivai pridėjimui
-        Grąžina True jei visi laivai pridėti sėkmingai,
-        False jei bent vienas netinka.
-        Patikrina ir prideda laivus tik jei visi teisingi.
-        Jei bent vienas netinka – neprideda NIEKO.
+        Prideda visus laivus vienu metu jei visi teisingi.
         """
-        # 1 Tikriname maksimalų kiekį (esami + nauji)
+        # 1 Tikriname maksimalų kiekį
         for ship in ships:
             existing_count = sum(1 for s in self.ships if s.length == ship.length)
             new_count = sum(1 for s in ships if s.length == ship.length)
@@ -133,74 +115,87 @@ class Board:
                 print(f"Per daug laivų ilgio {ship.length}")
                 return False
 
-        # 2 Tikriname ribas ir overlap naujų laivų tarpusavyje
+        # 2 Tikriname ribas ir overlap
         for i, ship in enumerate(ships):
             for x, y in ship.coordinates:
-
-                # ribos
                 if not (0 <= x < self.size and 0 <= y < self.size):
-                    print(f"Laivas išeina už ribų: ({x},{y})")
+                    print(f"Laivas {ship} išeina už ribų: ({x},{y})")
                     return False
 
-                # overlap su kitais naujais laivais
                 for other in ships[:i]:
                     if (x, y) in other.coordinates:
                         print(f"Laivai persidengia: ({x},{y})")
                         return False
 
-        # 3 Tarpų tikrinimas (nauji su naujais + nauji su esamais)
+        # 3 Tarpų tikrinimas
         for ship in ships:
             for x, y in ship.coordinates:
                 for dx in (-1, 0, 1):
                     for dy in (-1, 0, 1):
                         nx, ny = x + dx, y + dy
                         if 0 <= nx < self.size and 0 <= ny < self.size:
-
-                            # tikrinam su esamais
                             for existing in self.ships:
                                 if (nx, ny) in existing.coordinates:
-                                    print(
-                                        f"Per arti esamo laivo: ({x},{y}) prie ({nx},{ny})"
-                                    )
+                                    print(f"Per arti esamo laivo: ({x},{y}) prie ({nx},{ny})")
                                     return False
 
-                            # tikrinam su naujais
                             for other in ships:
                                 if other is ship:
                                     continue
                                 if (nx, ny) in other.coordinates:
-                                    print(
-                                        f"Nauji laivai per arti: ({x},{y}) prie ({nx},{ny})"
-                                    )
+                                    print(f"Nauji laivai per arti: ({x},{y}) prie ({nx},{ny})")
                                     return False
 
-        # 4 Jei viskas OK → pridedame VISUS VIENU METU
+        # 4 Pridedame visus
         self.ships.extend(ships)
         return True
 
     def place_ship_by_letter_number(
-        self, letter: str, number: int, length: int, orientation: str
-    ) -> Ship:
+        self, letter: str, number: int, length: int, orientation: str) -> Ship:
         """
-        Prideda laivą į lentą naudojant raidės ir skaičiaus koordinates.
-        letter = 'A'-'J',
-        number = 1-10
+        Sukuria laivą naudojant raidės ir skaičiaus koordinates.
         """
         x, y = convert_letter_number(letter, number)
         ship = Ship(x, y, length, orientation)
         return ship
 
-    # Šūvis su skaitinėmis koordinatėmis
+    def all_ships_sunk(self) -> bool:
+        """
+        Patikrina ar visi laivai paskandinti.
+        """
+        remaining = sum(not ship.is_sunk() for ship in self.ships)
+        #print(f"Likę laivai: {remaining}")
+        if remaining == 0:
+            #print("Visi laivai paskandinti!")
+            return True
+        return False
+
+    def __repr__(self):
+        return f"Board(size={self.size}, ships={self.ships})"
+
+
+class Shooter:
+    """
+    Klasė atsakinga už šaudymą į Board.
+    """
+    def __init__(self, board):
+        self.board = board
+        self.current_position = 0  # Tikra pozicija lentoje (0-99)
+        self.shots_sequence = []
+
     def shoot(self, x: int, y: int) -> str:
+        """
+        Atlieka šūvį į lentą.
+        """
         letter = chr(x + ord("A"))
         number = y + 1
 
-        if (x, y) in self.shots_taken:
+        if (x, y) in self.board.shots_taken:
             return f"Already shot here ({letter},{number})"
 
-        self.shots_taken.add((x, y))
+        self.board.shots_taken.add((x, y))
 
-        for ship in self.ships:
+        for ship in self.board.ships:
             if ship.register_hit(x, y):
                 return (
                     f"Sunk({letter},{number})"
@@ -211,55 +206,154 @@ class Board:
 
     def shoot_by_letter_number(self, letter: str, number: int) -> str:
         """
-        Shoot at the board using letter and number coordinates.
-        letter = 'A'-'J',
-        number = 1-10
+        Atlieka šūvį naudodamas raidę ir skaičių.
         """
         x, y = convert_letter_number(letter, number)
         return self.shoot(x, y)
 
-    def all_ships_sunk(self) -> bool:
+    def _position_to_coords(self, pos: int) -> Tuple[int, int]:
         """
-        Check if all ships are sunk.
-        Returns True if all ships are sunk, False otherwise.
-        remaining ships. (Likę laivai: 0)
+        Konvertuoja vienmačią poziciją (0-99) į koordinates (x, y).
+        pos 0 → (0,0), pos 5 → (0,5), pos 10 → (1,0)
         """
-        remaining = sum(not ship.is_sunk() for ship in self.ships)
-        print(f"Likę laivai: {remaining}")
-        if remaining == 0:
-            print("Visi laivai paskandinti!")
-            return True
-        else:
-            return False
+        x = pos // self.board.size
+        y = pos % self.board.size
+        return x, y
 
-    def __repr__(self):
-        return f"Board(size={self.size}, ships={self.ships})"
+    def auto_shoot_next(self) -> str:
+        """
+        Atlieka VIENĄ automatinį šūvį pagal pagerinta logiką:
+
+        Pradeda nuo pozicijos, kuri dalijasi iš 5 (0, 5, 10, 15...).
+        Kai pataiko arba jau šautas:
+        - +1 pozicija (dinamiškai šoka)
+        - Tada vėl kas 5 (+5 nuo naujos pozicijos)
+
+        Pavyzdys:
+        - Šauna pos 0 (A1) → Hit → +1
+        - Šauna pos 1 (A2) → tada kas 5 → +5
+        - Šauna pos 6 (A7) → Miss → +5
+        - Šauna pos 11 (B2)
+
+        Jei paskandytas laivas ilgio 1 → +2 pozicijos.
+
+        Returns:
+            str: šūvio rezultatas arba "No more shots"
+        """
+        max_position = self.board.size * self.board.size
+
+        # Jei viršijom ribą
+        if self.current_position >= max_position:
+            return "No more shots"
+
+        # Konvertuojame poziciją į koordinates
+        x, y = self._position_to_coords(self.current_position)
+
+        # Jei jau šovėme į šią poziciją, praleidžiame +1
+        while (x, y) in self.board.shots_taken:
+            self.current_position += 1
+            if self.current_position >= max_position:
+                return "No more shots"
+            x, y = self._position_to_coords(self.current_position)
+
+        # Atliekame šūvį
+        result = self.shoot(x, y)
+        self.shots_sequence.append(result)
+
+        # Logika priklausomai nuo rezultato
+        if "Sunk" in result:
+            # Patikrinkime laivo ilgį
+            for ship in self.board.ships:
+                if (x, y) in ship.coordinates and ship.is_sunk():
+                    if ship.length == 1:
+                        # Laivas ilgio 1 → praleidžiame +2
+                        self.current_position += 2
+                    else:
+                        # Ilgesnis laivas → +1
+                        self.current_position += 1
+                    break
+        elif "Hit" in result:
+            self.current_position += 1
+        elif "Already" in result:
+            self.current_position += 1
+        else:
+            self.current_position += 5
+
+        return result
+
+    def auto_shoot_all(self, max_rounds: int = ROUNDS_PER_GAME) -> List[str]:
+        """
+        Atlieka VISUS automatinius šūvius RATAIS iki visi laivai paskandinti.
+        Kai pasiekia pabaigą (pos 100), grįžta į pradžią (pos 0).
+        Args:
+            max_rounds (int): maksimalus ratų skaičius (default: None - be limito)
+                             Jei None, šaudo be limito (iki laivai paskandinti)
+        Returns:
+            List[str]: visų šūvių rezultatų sąrašas
+        """
+        results = []
+        rounds = 0
+
+        while not self.board.all_ships_sunk():
+            # Tikriname ar pasiektas limitas
+            if max_rounds is not None and rounds >= max_rounds:
+                print(f"Pasiektas maksimalus ratų skaičius ({max_rounds})")
+                break
+
+            result = self.auto_shoot_next()
+
+            if result == "No more shots":
+                self.current_position = 0
+                rounds += 1
+                print(f"--- Ratas {rounds} baigtas, pradedame iš naujo ---")
+                continue
+
+            results.append(result)
+
+        if self.board.all_ships_sunk():
+            print(f"Visi laivai paskandinti per {rounds + 1} ratus!")
+
+        return results
 
 
 if __name__ == "__main__":
+    print("\n" + "="*50)
+    print("=== Testuojame auto_shoot_all() ===")
+    print("="*50 + "\n")
+
     board = Board()
 
-    ship1 = board.place_ship_by_letter_number("A", 1, 5, "H")
-    ship2 = board.place_ship_by_letter_number("c", 1, 2, "H")
+    ship5 = board.place_ship_by_letter_number("I", 1, 5, "H")
+    ship4 = board.place_ship_by_letter_number("C", 6, 4, "H")
+    ship3 = board.place_ship_by_letter_number("C", 1, 3, "H")
+    ship3_1 = board.place_ship_by_letter_number("A", 7, 3, "H")
+    ship2_1 = board.place_ship_by_letter_number("E", 3, 2, "H")
+    ship2_2 = board.place_ship_by_letter_number("E", 6, 2, "H")
+    ship2_3 = board.place_ship_by_letter_number("I", 9, 2, "V")
+    ship1_1 = board.place_ship_by_letter_number("G", 1, 1, "H")
+    ship1_2 = board.place_ship_by_letter_number("G", 3, 1, "H")
+    ship1_3 = board.place_ship_by_letter_number("G", 5, 1, "H")
+    ship1_4 = board.place_ship_by_letter_number("G", 8, 1, "H")
+    ship1_5 = board.place_ship_by_letter_number("J", 7, 1, "H")
 
-    # Tikriname prieš pridėjimą
-    if board.add_all_ships_together([ship1, ship2]):
-        print("Visi laivai pridėti sekmingai i lentą")
-    else:
-        print("Bent vienas laivas blogai suformuotas, nieko nepridėdama i lenta")
+    ships = [
+        ship5, ship4, ship3, ship3_1,
+        ship2_1, ship2_2, ship2_3,
+        ship1_1, ship1_2, ship1_3, ship1_4,ship1_5
+    ]
 
-    print(board)
+    print(board.add_all_ships_together(ships))
 
-    # Šauname
-    print(board.shoot_by_letter_number("A", 1))
-    print(board.shoot_by_letter_number("A", 1))
-    print(board.shoot_by_letter_number("a", 2))
-    print(board.shoot_by_letter_number("a", 3))
-    print(board.shoot_by_letter_number("a", 4))
-    print(board.shoot_by_letter_number("a", 6))
-    print(board.shoot_by_letter_number("A", 5))
+    shooter = Shooter(board)
+    results = shooter.auto_shoot_all()
 
-    print(board.shoot_by_letter_number("c", 1))
-    print(board.shoot_by_letter_number("c", 2))
-
+    print(f"\n=== REZULTATAI ===")
+    print(results)
     print(board.all_ships_sunk())
+    print_statistics(results)
+
+    print("Write data to json file ...")
+    get_statistic = calculate_statistics(results)
+    print(get_statistic)
+    append_to_json_list(get_statistic, JSON_FILE_PATH)
+    print("Write data to json Done!!!.")

@@ -5,6 +5,7 @@ class Hero():
     def __init__(self, name):
         self.name = name
         self.inventory = []
+        self.inventory_limit = 30
         self.armor = []
         self.emotions = ['happy', 'angry', 'surprised', 'sad', 'calm']
         self.current_emotion = 'calm'
@@ -20,8 +21,12 @@ class Hero():
         }
 
     def buy_item(self, item):
-        self.inventory.append(item)
-        print(f"{self.name} buy {item}")
+        if len(self.inventory) < self.inventory_limit:
+            self.inventory.append(item)
+            item_name = getattr(item, 'item_name', getattr(item, 'name', 'Unknown Item'))
+            print(f"{self.name} bought {item_name}. Inventory: {self.inventory}")
+        else:
+            print(f"Inventory full! Cannot buy more items")
 
     def buy_armor(self, armor):
         self.armor.append(armor)
@@ -83,8 +88,19 @@ class Armor:
 
 
 def main():
-    batman_apollo = Hero("BATMAN APOLLO")
-    print(batman_apollo)
+    batman = Hero("BATMAN APOLLO")
+    print(batman)
+
+    key = Item("Golden Key", "key")
+    document = Item("Secret Document", "document")
+    coin = Item("Gold Coin", "currency")
+
+    batman.buy_item(key)
+    batman.buy_item(document)
+    batman.buy_item(coin)
+
+    print(batman.inventory)
+    print(batman)
 
 
 if __name__ == "__main__":

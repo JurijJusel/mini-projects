@@ -5,7 +5,7 @@ class Hero():
     def __init__(self, name):
         self.name = name
         self.inventory = []
-        self.inventory_limit = 30
+        self.inventory = Inventory()
         self.armor = []
         self.emotions = ['happy', 'angry', 'surprised', 'sad', 'calm']
         self.current_emotion = 'calm'
@@ -20,13 +20,9 @@ class Hero():
             'mana': 10
         }
 
-    def buy_item(self, item):
-        if len(self.inventory) < self.inventory_limit:
-            self.inventory.append(item)
-            item_name = getattr(item, 'item_name', getattr(item, 'name', 'Unknown Item'))
-            print(f"{self.name} bought {item_name}. Inventory: {self.inventory}")
-        else:
-            print(f"Inventory full! Cannot buy more items")
+    def buy_item(self, item, slot):
+        self.inventory.add(item, slot)
+
 
     def buy_armor(self, armor):
         self.armor.append(armor)
@@ -38,6 +34,33 @@ class Hero():
                 f"inventory={self.inventory}," \
                 f"armor={self.armor}," \
                 f"active_skills={self.active_skills})"
+
+
+class Inventory:
+    def __init__(self, limit=30):
+        self.items = []
+        self.limit = limit
+
+    def add(self, item, slot):
+        if len(self.items) < self.limit:
+            self.items.append((item, slot))
+            item_name = getattr(item, 'item_name', getattr(item, 'name', 'Unknown Item'))
+            print(f"Added {item_name} to slot {slot}. Inventory: {len(self.items)}/{self.limit}")
+        else:
+            item_name = getattr(item, 'item_name', getattr(item, 'name', 'Unknown Item'))
+            print(f"Inventory full! Cannot add {item_name}")
+
+    def remove(self, slot):
+        for i, (item, s) in enumerate(self.items):
+            if s == slot:
+                removed_item = self.items.pop(i)
+                item_name = getattr(removed_item[0], 'item_name', getattr(removed_item[0], 'name', 'Unknown Item'))
+                print(f"Removed {item_name} from slot {slot}")
+                return
+        print(f"No item in slot {slot}")
+
+    def __repr__(self):
+        return f"Inventory(count={len(self.items)}/{self.limit})"
 
 
 class Weapon:
@@ -94,10 +117,16 @@ def main():
     key = Item("Golden Key", "key")
     document = Item("Secret Document", "document")
     coin = Item("Gold Coin", "currency")
+    pistol = Pistol("Glock", damage=15)
+    rifle = AutomaticRifle("AK-47", damage=25)
+    armor = Armor("Kevlar Vest", defense=20)
 
-    batman.buy_item(key)
-    batman.buy_item(document)
-    batman.buy_item(coin)
+    batman.buy_item(key, 1)
+    batman.buy_item(document, 2)
+    batman.buy_item(coin, 3)
+    batman.buy_item(pistol, 4)
+    batman.buy_item(rifle, 5)
+    batman.buy_armor(armor)
 
     print(batman.inventory)
     print(batman)

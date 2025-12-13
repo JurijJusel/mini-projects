@@ -24,10 +24,6 @@ class Hero():
         self.inventory.add(item, slot)
 
 
-    def buy_armor(self, armor):
-        self.armor.append(armor)
-        print(f"{self.name} buy {armor}")
-
     def __repr__(self):
         return f"Hero(name={self.name}," \
                 f"current_emotion={self.current_emotion}," \
@@ -42,6 +38,12 @@ class Inventory:
         self.limit = limit
 
     def add(self, item, slot):
+        for existing_item, existing_slot in self.items:
+            if existing_slot == slot:
+                item_name = getattr(item, 'item_name', getattr(item, 'name', 'Unknown Item'))
+                print(f"Slot {slot} is already occupied! Cannot add {item}")
+                return
+
         if len(self.items) < self.limit:
             self.items.append((item, slot))
             item_name = getattr(item, 'item_name', getattr(item, 'name', 'Unknown Item'))
@@ -126,7 +128,7 @@ def main():
     batman.buy_item(coin, 3)
     batman.buy_item(pistol, 4)
     batman.buy_item(rifle, 5)
-    batman.buy_armor(armor)
+    batman.buy_item(armor, 6)
 
     print(batman.inventory)
     print(batman)

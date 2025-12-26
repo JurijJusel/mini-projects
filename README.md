@@ -44,3 +44,9 @@ then scraping detailed car information from **autoplius.lt**.
 The scraper runs in two phases:
 
 --- a/file:///Users/home/Github/mini-projects/skelbiu_auto/README.md
+
+# inventory_obj
+A Python-based inventory management system for RPG heroes with equipment,
+items, and character stats.
+
+--- a/file:///Users/home/Github/mini-projects/inventory_obj/README.md

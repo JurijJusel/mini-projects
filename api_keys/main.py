@@ -1,11 +1,11 @@
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 import requests
 from rich import print
 
 
-load_dotenv(dotenv_path='.env')
-virustotal_api_key = os.getenv('VIRUSTOTAL_API')
+load_dotenv(dotenv_path=Path(__file__).parent / '.env')
 abuseipdb_api_key = os.getenv('ABUSEIPDB_API')
 
 
@@ -19,7 +19,7 @@ querystring = {
 
 headers = {
     'Accept': 'text/plain',
-    #'Accept': 'application/json',
+    'Accept': 'application/json',
     'Key': abuseipdb_api_key
 }
 
@@ -28,12 +28,5 @@ print(response.text)
 
 
 
-# Formatted output
-#decodedResponse = json.loads(response.text)
-
-#url = f"https://www.virustotal.com/{virustotal_api_key}/v3/ip_addresses/192.168.1.226"
-#out = requests.get(url)
-
-#print(out.text)
 # "78.62.199.128"
 # "192.168.1.226"

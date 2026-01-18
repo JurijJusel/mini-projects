@@ -1,17 +1,12 @@
 import os
-import json
 from pathlib import Path
-from dotenv import load_dotenv
 import requests
-from rich import print
-from ip_list import ip_address, ip_addresses
+from ip_list import ip_addresses
 from abuseip_model import AbuseModel
+from rich import print
 
+from dotenv import load_dotenv
 load_dotenv(dotenv_path=Path(__file__).parent / '.env')
-
-abuseipdb_api_key = os.getenv('ABUSEIPDB_API')
-
-abuse_api_url = 'https://api.abuseipdb.com/api/v2/check'
 
 
 def get_info_from_ip(ip_address, api_key_abuse, abuse_url):
@@ -123,6 +118,54 @@ def get_info_from_ips_list(ip_list, api_key_abuse, abuse_url):
     return collected_data
 
 
+def get_check_abuseipdb_key():
+    """
+    Get and validate AbuseIPDB API key from '.env' environment variables.
+    Returns:
+        str or None: Valid API key if found and working, None otherwise.
+    Raises:
+        None: All exceptions are caught and handled internally.
+    Example:
+        api_key = get_abuseipdb_key()
+    """
+    try:
+        api_key = os.getenv('ABUSEIPDB_API')
+        abuse_url = 'https://api.abuseipdb.com/api/v2/check'
+
+        if not api_key:
+            print("AbuseIPDB API key not found in environment variables")
+            return None
+
+        # Simple validation with a test request
+        headers = {
+            'Key': api_key,
+            'Accept': 'application/json',
+        }
+
+        querystring = {
+            'ipAddress': '8.8.8.8',
+            'maxAgeInDays': '90',
+            'verbose': '',
+        }
+
+        response = requests.get(url=abuse_url, headers=headers, params=querystring)
+        if response.status_code == 401:
+            print("AbuseIPDB API key is invalid or expired")
+            return None
+
+        return api_key
+
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to validate AbuseIPDB API: {e}")
+        return None
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+
 if __name__ == "__main__":
+    abuseipdb_api_key = get_check_abuseipdb_key()
+    abuse_api_url = 'https://api.abuseipdb.com/api/v2/check'
+
     results_list = get_info_from_ips_list(ip_addresses, abuseipdb_api_key, abuse_url=abuse_api_url)
     print(results_list)

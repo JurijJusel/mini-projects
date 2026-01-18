@@ -1,7 +1,5 @@
 from __future__ import annotations
-
 from typing import Any, List, Optional
-
 from pydantic import BaseModel, Field
 
 
@@ -43,6 +41,9 @@ class AbuseModel(BaseModel):
     reputation: Reputation
     abuse_history: History = Field(..., alias='abuse-history')
 
+
+
+# Input data example from AbuseIPDB API
 """
 {
     'data': {
@@ -65,7 +66,8 @@ class AbuseModel(BaseModel):
     }
 }
 """
-# model output from AbuseModel 
+
+# model output from AbuseModel
 """
 {
     "ip-identity": {

@@ -118,23 +118,25 @@ def get_info_from_ips_list(ip_list, api_key_abuse, abuse_url):
     return collected_data
 
 
-def get_check_abuseipdb_key():
+def check_abuseipdb_key(api_key, abuse_url):
     """
-    Get and validate AbuseIPDB API key from '.env' environment variables.
+    Validate AbuseIPDB API key by making a test request.
+    Args:
+        api_key (str): AbuseIPDB API key from environment variables.
+        abuse_url (str): AbuseIPDB API endpoint URL.
     Returns:
-        str or None: Valid API key if found and working, None otherwise.
+        bool: True if API key is valid, False otherwise.
     Raises:
         None: All exceptions are caught and handled internally.
     Example:
-        api_key = get_abuseipdb_key()
-    """
-    try:
         api_key = os.getenv('ABUSEIPDB_API')
         abuse_url = 'https://api.abuseipdb.com/api/v2/check'
-
+        is_valid = check_abuseipdb_key(api_key, abuse_url)
+    """
+    try:
         if not api_key:
             print("AbuseIPDB API key not found in environment variables")
-            return None
+            return False
 
         # Simple validation with a test request
         headers = {
@@ -148,24 +150,38 @@ def get_check_abuseipdb_key():
             'verbose': '',
         }
 
-        response = requests.get(url=abuse_url, headers=headers, params=querystring)
+        response = requests.get(url=abuse_url, headers=headers, params=querystring, timeout=10)
+
         if response.status_code == 401:
             print("AbuseIPDB API key is invalid or expired")
-            return None
+            return False
+        elif response.status_code == 504:
+            print("AbuseIPDB API timeout - server not responding")
+            return False
+        elif response.status_code != 200:
+            print(f"AbuseIPDB API returned status code: {response.status_code}")
+            return False
 
-        return api_key
+        return True
 
+    except requests.exceptions.Timeout:
+        print("Request to AbuseIPDB API timed out")
+        return False
     except requests.exceptions.RequestException as e:
         print(f"Failed to validate AbuseIPDB API: {e}")
-        return None
+        return False
     except Exception as e:
-        print(f"Error: {e}")
-        return None
+        print(f"Unexpected error: {e}")
+        return False
 
 
 if __name__ == "__main__":
-    abuseipdb_api_key = get_check_abuseipdb_key()
+    api_key = os.getenv('ABUSEIPDB_API')
     abuse_api_url = 'https://api.abuseipdb.com/api/v2/check'
+    abuse_api_key_check = check_abuseipdb_key(api_key, abuse_api_url)
 
-    results_list = get_info_from_ips_list(ip_addresses, abuseipdb_api_key, abuse_url=abuse_api_url)
-    print(results_list)
+    if abuse_api_key_check:
+        results_list = get_info_from_ips_list(ip_addresses, api_key, abuse_url=abuse_api_url)
+        print(results_list)
+    else:
+        print("AbuseIPDB API key is not valid. Please check your '.env' file.")

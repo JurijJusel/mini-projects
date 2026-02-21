@@ -4,6 +4,8 @@ import requests
 from ip_list import ip_addresses
 from abuseip_model import AbuseModel
 from rich import print
+from ip_list import domain_list
+from socket_domain_ip import domain_to_ip
 
 from dotenv import load_dotenv
 load_dotenv(dotenv_path=Path(__file__).parent / '.env')
@@ -180,8 +182,10 @@ if __name__ == "__main__":
     abuse_api_url = 'https://api.abuseipdb.com/api/v2/check'
     abuse_api_key_check = check_abuseipdb_key(api_key, abuse_api_url)
 
+    domain_to_ip_results = [domain_to_ip(domain) for domain in domain_list]
+
     if abuse_api_key_check:
-        results_list = get_info_from_ips_list(ip_addresses, api_key, abuse_url=abuse_api_url)
+        results_list = get_info_from_ips_list( domain_to_ip_results, api_key, abuse_url=abuse_api_url)
         print(results_list)
     else:
         print("AbuseIPDB API key is not valid. Please check your '.env' file.")

@@ -5,6 +5,8 @@ from typing import Optional, List, Dict
 from virustotal_model import VirusTotalIP
 from ip_list import ip_addresses
 from rich import print
+from ip_list import domain_list
+from socket_domain_ip import domain_to_ip
 
 from dotenv import load_dotenv
 load_dotenv(dotenv_path=Path(__file__).parent / '.env')
@@ -112,10 +114,10 @@ if __name__ == "__main__":
     virustotal_api_key = os.getenv('VIRUSTOTAL_API')
 
     vt_api_key_check = check_virustotal_key(virustotal_api_key)
+    domain_to_ip_results = [domain_to_ip(domain) for domain in domain_list]
 
     if vt_api_key_check:
-        results = get_virustotal_info_from_ips_list(ip_addresses, virustotal_api_key)
+        results = get_virustotal_info_from_ips_list(domain_to_ip_results, virustotal_api_key)
         print(results)
     else:
         print("VirusTotal API key is not valid. Please check your '.env' file.")
-
